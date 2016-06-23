@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Class-Path: UI.jar CSCommon.jar IO.jar
+Main-Class: ru.gremal.cloudsticker.core.Controller
+
