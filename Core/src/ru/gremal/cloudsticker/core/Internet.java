@@ -9,6 +9,8 @@ import java.net.*;
 import java.nio.charset.Charset;
 import java.util.*;
 
+import static ru.gremal.cloudsticker.core.Controller.logFileService;
+
 public class Internet {
     //private final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0"; // рабочий вариант
     //private static final String USER_AGENT = "Mozilla/5.0 Gecko/20100101 Firefox/35.0"; // убрал информацию в скобках (видимо, о системе). Тоже рабочий вариант
@@ -230,6 +232,8 @@ public class Internet {
             map.put("note", URLEncoder.encode(backSlashReplace(note), Charset.defaultCharset().displayName()));
             map.put("timeStamp", URLEncoder.encode(Tools.Date2String(timeStamp), Charset.defaultCharset().displayName()));
         }catch (UnsupportedEncodingException ex){ System.out.println(ex.toString()); return new Result(DBMessage.VOID); }
+
+        logFileService.publishToLog(map.containsKey("note")?new StringBuilder("note : ").append(map.get("note")).toString():"note в map нет");
 
         //List<String> list = null;
         List<String> list = getServerAnswer("updateNote", map);
@@ -568,8 +572,12 @@ public class Internet {
 class InternetConnectionTest{
     private static final String[] PING_URLS = {"http://www.yandex.ru/", "http://cn.gremal.ru/test.html"};
     //private static final String[] PING_URLS = {"http://www.yandex.ru/", "http://192.185.236.166/~gremal/cn/test.html"};
+    private static final int GET_CONTENT_WAITING_TIME = 15000; // время ожидания выхода из getContent(), мс
+
+
 
     /* Интерфейсная функция. Проверка доступности облака и интернета через неё. */
+    @Deprecated
     protected static InternetConnectionMessage isCloudReachable(){
         /* Доступа в интернет нет (оба сайта недоступны), Облако недоступно (первый доступен, второй - нет),
          * связь Ок - Облако доступно */
@@ -585,36 +593,162 @@ class InternetConnectionTest{
         return InternetConnectionMessage.YES;
     }
 
+    /* Интерфейсная функция. Проверка доступности облака и интернета через неё. */
+    // isCloudReachableG[et]C[ontent]()
+    // работает в паре с isCloudReachableG[et]C[ontent](String urlString)
+    protected InternetConnectionMessage isCloudReachableGC(){
+        /* Доступа в интернет нет (оба сайта недоступны), Облако недоступно (первый доступен, второй - нет),
+         * связь Ок - Облако доступно */
+        boolean result1 = this.isCloudReachableGC(PING_URLS[0]);
+        boolean result2 = this.isCloudReachableGC(PING_URLS[1]);
+        //if(result2){ return InternerConnectionMessage.YES; }
+        if(!result1 && !result2){
+            return InternetConnectionMessage.NO;
+        }
+        if(result1 && !result2){
+            return InternetConnectionMessage.CLOUD_NOT_FOUND;
+        }
+        return InternetConnectionMessage.YES;
+    }
+
     /* Пинг. Функция сигнализирует, доступно ли облако с этого устройства. Используется для проверки доступа в Интернет,
      * например. Для теста используются несколько, хостов */
+    @Deprecated
     private static boolean isCloudReachable(String urlString){
         for(int i = 1; i <= 3; i++) {
             //Трёккратная проверка связи, в случае неудачи.
-                try {
-                    //make a URL to a known source
-                    URL url = new URL(urlString);
+            try {
+                //make a URL to a known source
+                URL url = new URL(urlString);
 
-                    //open a connection to that source
-                    HttpURLConnection urlConnect = (HttpURLConnection) url.openConnection();
+                //open a connection to that source
+                final HttpURLConnection urlConnect = (HttpURLConnection) url.openConnection();
 
-                    Object objData = null;
-                    //trying to retrieve data from the source. If there
-                    //is no connection, this line will fail
-                    objData = urlConnect.getContent();
+                Object objData = null;
 
-                    // todo где-то тут затревает нить в Андроиде.
+                //trying to retrieve data from the source. If there
+                //is no connection, this line will fail
+                objData = urlConnect.getContent();
 
-                    break; // результат положительный - выходим из цикла
+                // todo где-то тут затревает нить в Андроиде.
+                // то есть, уходит в getConnect() и застревает там
+                // иногда застревает. Иногда нет.
+                // 1. Вывести getConnect в отдельный поток.
+                // 2. Подождать здесь некоторое время завершения потока с getConnect()
+                // 3. Если в течение тестового времени нет возврата из getConnect, произвести выход из функции
+                // с результатом false. (т. е. в данном случае не производить троекратной проверки связи)
+                // + возможно, выдать сообщение в статусную строку
 
-                } catch (Exception e) {
-                    //e.printStackTrace();
-                    if(i == 3) {return false;} // три попытки были неудачными - облако недоступно
-                }
+                break; // результат положительный - выходим из цикла
+
+            } catch (Exception e) {
+                //e.printStackTrace();
+                if(i == 3) {return false;} // три попытки были неудачными - облако недоступно
+            }
         }
 
         return true;
     }
+
+    /* Пинг. Функция сигнализирует, доступно ли облако с этого устройства. Используется для проверки доступа в Интернет,
+    * например. Для теста используются несколько, хостов */
+    // Так как, данный метод не static, её можно использовать только создав объект InternetConnectionTest,
+    // в отличии от static isCloudReachable.
+    // isCloudReachableG[et]C[ontent]()
+    private boolean isCloudReachableGC(String urlString){
+        final ThreadGetContentResult threadResult = new ThreadGetContentResult();
+
+        for(int i = 1; i <= 3; i++) {
+            //Трёккратная проверка связи, в случае неудачи.
+            try {
+                //make a URL to a known source
+                URL url = new URL(urlString);
+
+                //open a connection to that source
+                final HttpURLConnection urlConnect = (HttpURLConnection) url.openConnection();
+
+                //Object objData = null;
+
+                Thread getContentThread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            //trying to retrieve data from the source. If there
+                            //is no connection, this line will fail
+                            threadResult.setContentResult(urlConnect.getContent());
+                        } catch (IOException e) {
+                            threadResult.setException(e);
+                        }
+                    }
+                }, "HttpURLConnection.getContent() calling");
+                getContentThread.start();
+
+                int timer = 0;
+                // крутимся в цикле ожидания, либо, пока не получим ответ из метода getContent, либо, пока не истечёт время ожидания этого ответа.
+                while((threadResult.getContentResult() == null && threadResult.getException() == null)||(timer < GET_CONTENT_WAITING_TIME)){
+                    Thread.sleep(GET_CONTENT_WAITING_TIME/100);
+                    timer =+ GET_CONTENT_WAITING_TIME/100;
+                }
+
+                if(threadResult.getContentResult() != null){
+                    // успех, связь есть
+                    break;
+                }else if(threadResult.getException() != null){
+                    // ошибка, связи нет
+                    if(i == 3){
+                        // три попытки связаться - подтверждённое отстутсвие связи
+                        return false;
+                    }
+                }else{
+                    // нить не вышла из метода getContent
+                    // заблокировать интерфейс
+                    // вывести статусное сообщение
+                    Controller.gui.setInternetConnectionStatuses(InternetConnectionMessage.HEAVYSIDE_KENNELI_LAYER_PROBLEM);
+                    return false;
+                }
+                // todo где-то тут затревает нить в Андроиде.
+                // то есть, уходит в getConnect() и застревает там
+                // иногда застревает. Иногда нет.
+                // 1. Вывести getConnect в отдельный поток.
+                // 2. Подождать здесь некоторое время завершения потока с getConnect()
+                // 3. Если в течение тестового времени нет возврата из getConnect, произвести выход из функции
+                // с результатом false. (т. е. в данном случае не производить троекратной проверки связи)
+                // + возможно, выдать сообщение в статусную строку
+
+                break; // результат положительный - выходим из цикла
+
+            } catch (Exception e) {
+                // разные прочие ошибки, не связанные с getContent()
+                Controller.logFileService.publishToLog(new StringBuilder(e.getCause().toString()).append(">>").append(e.getMessage()).toString());
+            }
+        }
+
+        return true;
+    }
+
+    // Класс, описывающий результат, возвращаемый нитью с getContent() в методе isCloudReachableGC()
+    static class ThreadGetContentResult{
+        private Object contentResult = null;
+        private IOException exception = null;
+
+        protected Object getContentResult(){
+            return contentResult;
+        }
+        protected void setContentResult(Object contentResult){
+            this.contentResult = contentResult;
+        }
+
+        public IOException getException() {
+            return exception;
+        }
+
+        public void setException(IOException exception) {
+            this.exception = exception;
+        }
+    }
 }
+
+
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------------------------------------------------*/
@@ -670,7 +804,7 @@ class TestController{
     // собственно, функция, которая вызывает продпрограмму тестирования
     synchronized protected void testConnection(){
         // Раскомметировать для реального запуска тестирования связи
-        InternetConnectionMessage message = InternetConnectionTest.isCloudReachable();
+        InternetConnectionMessage message = new InternetConnectionTest().isCloudReachableGC();
         // если только gui уже готов для работы, тогда и заполняем статусное сообщение.
         if(Controller.gui != null) {
             if (Controller.gui.getReady()) {

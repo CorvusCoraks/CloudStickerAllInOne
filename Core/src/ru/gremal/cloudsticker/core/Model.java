@@ -4,6 +4,7 @@ import ru.gremal.cloudsticker.common.tools.InternetConnectionMessage;
 import ru.gremal.cloudsticker.common.tools.StatusSender;
 import ru.gremal.cloudsticker.common.ui.AbstractUIControl;
 import ru.gremal.cloudsticker.common.tools.CommonTools;
+import ru.gremal.cloudsticker.common.ui.UiTextId;
 
 import java.io.*;
 import java.util.*;
@@ -151,7 +152,9 @@ public class Model {
                             info.textField = textFields[i];
                             info.button = buttons[i];
                             info.textField.setSText(info.deviceLabel);
+                            //todo в будущем убрать следующий вызов
                             info.button.setSText(Controller.gui.getLocalisationValueByKey("btKickFromCircle"));
+                            info.button.setSText(UiTextId.btKick);
                             i++;
                         }
                         devicesInCircle.put(info.deviceId, info);
@@ -202,6 +205,7 @@ public class Model {
             noteInfo.noteTimeStamp = new Date();
             noteInfo.noteWasChanged = false;
         }
+        Controller.logFileService.publishToLog(new StringBuilder("noteInfo.note = ").append(noteInfo.note).toString());
         if(noteInfo.noteTimeStamp.compareTo(mapTimeStamps.get(noteInfo.noteId)) > 0){
             /* TimeStamp у заметки на стороне клиента больше, чем на сервере.
             Значит, обновляем данные на сервере */
@@ -246,11 +250,11 @@ public class Model {
             devicesInCircle.clear();
             devicesInCircle.putAll(tempMap);
 
-            Controller.logFileService.publishToLog(new StringBuilder("Число устройств круга: ").append(devicesInCircle.size()).toString());
-            Controller.logFileService.publishToLog(new StringBuilder("mapTimeStamps : ").append(mapTimeStamps).toString());
-            Controller.logFileService.publishToLog(new StringBuilder("iniData : ").append(iniData).toString());
-            Controller.logFileService.publishToLog(new StringBuilder("answer : ").append(answer).toString());
-            Controller.logFileService.publishToLog(new StringBuilder("answer.content : ").append(answer.content).toString());
+            //Controller.logFileService.publishToLog(new StringBuilder("Число устройств круга: ").append(devicesInCircle.size()).toString());
+            //Controller.logFileService.publishToLog(new StringBuilder("mapTimeStamps : ").append(mapTimeStamps).toString());
+            //Controller.logFileService.publishToLog(new StringBuilder("iniData : ").append(iniData).toString());
+            //Controller.logFileService.publishToLog(new StringBuilder("answer : ").append(answer).toString());
+            //Controller.logFileService.publishToLog(new StringBuilder("answer.content : ").append(answer.content).toString());
 
             for (Map.Entry<String, Date> pair : mapTimeStamps.entrySet()) {
 
@@ -487,7 +491,7 @@ public class Model {
 
     /* проверка интернет соединения. */
     private boolean isInternerConnectionActive(){
-        InternetConnectionMessage message = InternetConnectionTest.isCloudReachable();
+        InternetConnectionMessage message = new InternetConnectionTest().isCloudReachableGC();
         if (Controller.gui != null) {
             if (Controller.gui.getReady()) {
                 // Проверки, этапа инициализации

@@ -63,7 +63,7 @@ public class Controller {
 
         final CoreSideImplementation csi = new CoreSideImplementation();
 
-        logFileService.publishToLog("Вход в main");
+        //logFileService.publishToLog("Вход в main");
 
         // обновление файла start.jar
         File oldStartFile = new File("./start.jar");
@@ -74,7 +74,7 @@ public class Controller {
         // Если объект UI уже есть, то ни о каких обновлениях нет и речи (программа уже запущена)
         if(CoreDetonator.getUi() == null ) {
             // Если Start.jar присутствует, работаем с попыткой обновления программы
-            logFileService.publishToLog("getUi() == null");
+            //logFileService.publishToLog("getUi() == null");
             if (isStartFilePresent) {
                 if (newStartFile.exists()) {
                     oldStartFile.delete();
@@ -84,7 +84,7 @@ public class Controller {
                 // Если запуск программы произошёл не через start.jar, то перекидываем управление принудительно в start.jar
                 //System.out.println("на входе в main");
                 List<String> argsList = Arrays.asList(args);
-                logFileService.publishToLog("В аргументах start: " + argsList.contains("start"));
+                //logFileService.publishToLog("В аргументах start: " + argsList.contains("start"));
                 if (!argsList.contains("start")) {
                     // был произведён запуск через модуль Core
                     // необходимо передать управление в модуль start
@@ -112,14 +112,14 @@ public class Controller {
         *
         * Вызов констурктора gui не означает, что в следующей строке gui будет не null
         */
-        logFileService.publishToLog("перед independentModelTune()");
+        //logFileService.publishToLog("перед independentModelTune()");
         independentModelTune();
-        logFileService.publishToLog("после independModelTune()");
+        //logFileService.publishToLog("после independModelTune()");
 
         if(CoreDetonator.getUi() == null) {
             // Убедились, что запуск UI произведён не из внешнего модуля, уже создавшего UI
             gui = GUI.UIDetonator.createUiInstance(csi);
-            logFileService.publishToLog("GUI0: " + gui);
+            //logFileService.publishToLog("GUI0: " + gui);
         }else{
             // Если модуль ядра является импортированным, то UI уже создан внешним модулем
             gui = CoreDetonator.getUi();
@@ -130,12 +130,12 @@ public class Controller {
         В любом случае, они должны выполнять обращения к партнёрам только после их абсолютной готовности. */
 
         // Задержка, чтобы позволить GUI полностью сформироваться до инициализации модели
-        logFileService.publishToLog("GUI1: " + gui);
+        //logFileService.publishToLog("GUI1: " + gui);
         while (gui == null) { Thread.sleep(CommonTools.SLEEP_INTERVAL); }
-        logFileService.publishToLog("GUI2: " + gui);
+        //logFileService.publishToLog("GUI2: " + gui);
         while (!gui.getReady()) { Thread.sleep(CommonTools.SLEEP_INTERVAL); }
-        logFileService.publishToLog("GUI3: " + gui);
-        logFileService.publishToLog("перед dependModelTune()");
+        //logFileService.publishToLog("GUI3: " + gui);
+        //logFileService.publishToLog("перед dependModelTune()");
         dependModelTune();
 
         // Первоначальный запуск нити проверки связи с Интернет
@@ -145,7 +145,7 @@ public class Controller {
         if(CoreDetonator.getUi() == null) {
             // Скачивание обновлённой версии
             if (isStartFilePresent) {
-                if (InternetConnectionTest.isCloudReachable() == InternetConnectionMessage.YES) {
+                if (new InternetConnectionTest().isCloudReachableGC() == InternetConnectionMessage.YES) {
                     boolean isRefreshNeeded = false;
                     Internet.Result answer = Internet.getLastProgramVer();
                     float ver = Float.parseFloat((String) answer.content);
@@ -164,7 +164,7 @@ public class Controller {
             }
         }
         // Передача статистики
-        if(InternetConnectionTest.isCloudReachable() == InternetConnectionMessage.YES) {
+        if(new InternetConnectionTest().isCloudReachableGC() == InternetConnectionMessage.YES) {
             Map<String, String> hash = new HashMap<String, String>();
             hash.put("os", OS_NAME);
             Internet.Result answer = Internet.sendStatistics(hash);
