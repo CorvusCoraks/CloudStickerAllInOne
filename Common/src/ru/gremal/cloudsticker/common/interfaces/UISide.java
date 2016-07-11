@@ -14,7 +14,7 @@ import ru.gremal.cloudsticker.common.ui.AbstractUIControl;
  */
 public interface UISide {
     /* Функция проверки связи для вызова из внешних модулей. Формирование статусной строки в GUI,
-    запуск процедур активации и деактивации элементов GUI */
+    запуск процедур активации и деактивации элементов GUI, в зависимости от наличия или отсутствия связи */
     public void setInternetConnectionStatuses(InternetConnectionMessage status);
     /* Функция читает планируемые параметры GUI из соответствующего Мэпа контроллера */
     public void setInitGUIParameters();

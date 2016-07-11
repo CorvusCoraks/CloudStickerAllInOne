@@ -4,6 +4,9 @@ import ru.gremal.cloudsticker.common.interfaces.UISide;
 
 /**
  * Буферный класс междё реализацией пользовательского интерфейса и программным интерфейсом UISide
+ *
+ * зачем так много вызовов функций, которые дублированы со стороны ядра????
+ * зачем они нужны, если можно пользоваться вызовами интерфейса ядра?
  */
 public abstract class AbstractUI implements UISide {
     // Количество устройств в круге. Устанавливается модулем Core путём вызова setMaxCompanyCount
@@ -25,42 +28,52 @@ public abstract class AbstractUI implements UISide {
 
     protected final int FIELD_CHANGE_TIMEOUT = 5000;
 
+    //todo на фига оно надо, если в CoreSide есть метод getMaxCompanyCount();
     protected void setMaxCompanyCount(int MaxCompanyCount) {
         this.MAX_COMPANY_COUNT = MaxCompanyCount;
     }
 
+    //todo на фига оно надо, если в CoreSide есть метод getMaxCompanyCount();
     protected int getMaxCompanyCount(){
         return this.MAX_COMPANY_COUNT;
     }
 
+    //todo на фига оно надо, если в CoreSide есть метод getMaxCharsInNote()
     protected void setMaxCharsInNote(int maxChars) {
         this.MAX_CHARS_IN_NOTE = maxChars;
     }
 
+    //todo на фига оно надо, если в CoreSide есть метод getMaxCharsInNote()
     protected int getMaxCharsInNote(){ return this.MAX_CHARS_IN_NOTE; }
 
+    //todo на фига оно надо, если в CoreSide есть метод getMaxCharsInLabel();
     protected int getMaxCharsInLabel() {
         return this.MAX_CHARS_IN_LABEL;
     }
 
+    //todo на фига оно надо, если в CoreSide есть метод getMaxCharsInLabel();
     protected void setMaxCharsInLabel(int count) {
         this.MAX_CHARS_IN_LABEL = count;
     }
 
+    //todo на фига оно надо, если в CoreSide есть метод getMaxCharsInInvitationPass()
     protected int getMaxCharsInInvitationPass() {
         return this.MAX_CHARS_IN_INVITATION_PASS;
     }
 
+    //todo на фига оно надо, если в CoreSide есть метод getMaxCharsInInvitationPass()
     protected void setMaxCharsInInvitationPass(int count) {
         this.MAX_CHARS_IN_INVITATION_PASS = count;
     }
 
+    //todo на фига оно надо, если в CoreSide есть метод getCoreVersion
     protected void setCoreVersion(float ver) {
         this.CORE_VERSION = ver;
     }
 
     protected void setUIVersion(float ver){ this.UI_VERSION = ver; }
 
+    //todo на фига оно надо, если в CoreSide есть метод getCoreVersion
     protected float getCoreVersion(){ return this.CORE_VERSION; }
 
     protected float getUIVersion(){ return this.UI_VERSION; }
